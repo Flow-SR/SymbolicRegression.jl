@@ -43,8 +43,14 @@ end
 
 # Evaluate the loss of a particular expression on the input dataset.
 function _eval_loss(
-    tree::Node{T}, dataset::Dataset{T,L}, options::Options, regularization::Bool, idx
+    tree::Node{T}, 
+    dataset::Dataset{T,L}, 
+    options::Options, 
+    regularization::Bool;
+    partition=nothing,
+    idx=nothing, 
 )::L where {T<:DATA_TYPE,L<:LOSS_TYPE}
+
     (prediction, completion) = eval_tree_array(
         tree, maybe_getindex(dataset.X, :, idx), options
     )
@@ -53,6 +59,12 @@ function _eval_loss(
     end
 
     if options.allocation
+        @assert partition !== nothing
+        for i in 1:length(partition)-1
+            partition_function = sum(prediction[partition[i]+1:partition[i+1]])
+            prediction[partition[i]:partition[i+1]] = prediction[partition[i]:partition[i+1]] / partition_function
+        end
+
         partition_function = sum(prediction)
         prediction = prediction / partition_function
     end
@@ -129,6 +141,7 @@ function eval_loss_allocation(
     options::Options;
     regularization::Bool=true,
     idx=nothing,
+    partition=nothing,
 )::L where {T<:DATA_TYPE,L<:LOSS_TYPE}
     @assert idx !== nothing
     _idx = idx
@@ -220,8 +233,23 @@ function score_func_allocation(
     # Initialize vectors for scores and result_losses
     scores = Vector{L}()
     result_losses = Vector{L}()
+    
+    destinations = Vector{Int}()  # zwy: this is to store the destinations of all origins
+    partition = Vector{Int}()
+    push!(partition, 0)  # zwy: this is to store the destinations of all origins
+    # idx as the destinations of all origins
+    for id_origin in id_origins 
+        # Get indices of non-zero elements
+        idx = findall(options.adjmatrix[id_origin, :] .== 1)
+        idx = idx+ sum(options.adjmatrix[:id_origin,:]) # zwy: this is because the original OD matrix are flattened.
+        append!(destinations, idx)
+        push!(partition, length(destinations))
+    end
 
-    for id_origin in id_origins
+    result_losses = eval_loss_allocation(get_tree(member), dataset, options; idx=destinations, partition = partition) 
+
+    # deprecated: loop for every origin
+    #=for id_origin in id_origins 
         # Get indices of non-zero elements
         idx = findall(options.adjmatrix[id_origin, :] .== 1)
         idx = idx+ sum(options.adjmatrix[:id_origin,:]) # zwy: this is because the original OD matrix are flattened.
@@ -241,6 +269,7 @@ function score_func_allocation(
         push!(scores, score)
         push!(result_losses, result_loss)
     end
+    =#
 
     # Return the mean of scores and result_losses
     return mean(scores), mean(result_losses)
