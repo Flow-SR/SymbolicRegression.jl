@@ -563,11 +563,11 @@ end
 function _equation_search(
     ::Val{PARALLELISM},
     ::Val{DIM_OUT},
-    datasets::Vector{D},
+    datasets::Vector{D}, # zwy: multiple datasets, each's type is Dataset{T,L} (defined in where.)
     niterations::Int,
     options::Options,
     numprocs::Int,
-    procs::Union{Vector{Int},Nothing},
+    procs::Union{Vector{Int},Nothing}, # zwy: ?
     addprocs_function::Function,
     exeflags::Cmd,
     runtests::Bool,
@@ -576,14 +576,14 @@ function _equation_search(
     progress,
     ::Val{RETURN_STATE},
 ) where {T<:DATA_TYPE,L<:LOSS_TYPE,D<:Dataset{T,L},PARALLELISM,RETURN_STATE,DIM_OUT}
-    stdin_reader = watch_stream(stdin)
+    stdin_reader = watch_stream(stdin) # zwy: listening
 
     if options.define_helper_functions
         set_default_variable_names!(first(datasets).variable_names)
     end
 
     example_dataset = datasets[1]
-    nout = size(datasets, 1)
+    nout = size(datasets, 1) # zwy: In Julia, the first fimension is 1 but not 0.
     @assert (nout == 1 || DIM_OUT == 2)
 
     if runtests
@@ -592,7 +592,7 @@ function _equation_search(
     end
 
     for dataset in datasets
-        update_baseline_loss!(dataset, options)
+        update_baseline_loss!(dataset, options) # zwy: ! means the function will change the input, here, dataset.
     end
 
     if options.seed !== nothing
@@ -603,7 +603,7 @@ function _equation_search(
     WorkerOutputType = if PARALLELISM == :serial
         Tuple{Population{T,L},HallOfFame{T,L},RecordType,Float64}
     elseif PARALLELISM == :multiprocessing
-        Future
+        Future 
     else
         Task
     end
@@ -676,7 +676,8 @@ function _equation_search(
     @assert length(hallOfFame) == nout
     hallOfFame::Vector{HallOfFame{T,L}}
 
-    for j in 1:nout, i in 1:(options.populations)
+    # zwy: Create populations
+    for j in 1:nout, i in 1:(options.populations) 
         worker_idx = assign_next_worker!(
             worker_assignment; out=j, pop=i, parallelism=PARALLELISM, procs
         )
@@ -1065,7 +1066,7 @@ function _dispatch_s_r_cycle(;
         dataset, out_pop, options, curmaxsize, record
     )
     num_evals += evals_from_optimize
-    if options.batching
+    if options.batching # zwy: why batching but not use idx
         for i_member in 1:(options.maxsize + MAX_DEGREE)
             score, result_loss = score_func(dataset, best_seen.members[i_member], options)
             best_seen.members[i_member].score = score
