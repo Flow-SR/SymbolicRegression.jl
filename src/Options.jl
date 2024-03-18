@@ -385,6 +385,7 @@ function Options end
     perturbation_factor::Real=0.076,
     annealing::Bool=false,
     batching::Bool=false,
+    allocation::Bool=false,
     batch_size::Integer=50,
     mutation_weights::Union{MutationWeights,AbstractVector,NamedTuple}=MutationWeights(),
     crossover_probability::Real=0.066,
