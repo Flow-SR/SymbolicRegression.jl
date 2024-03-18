@@ -52,6 +52,11 @@ function _eval_loss(
         return L(Inf)
     end
 
+    if options.allocation
+        partition_function = sum(prediction)
+        prediction = prediction / partition_function
+    end
+
     loss_val = if dataset.weighted
         _weighted_loss(
             prediction,
@@ -100,10 +105,9 @@ function eval_loss(
     loss_val = if options.loss_function === nothing
         _eval_loss(tree, dataset, options, regularization, idx)
     else
-        f = options.loss_function::Function
-        evaluator(f, tree, dataset, options, idx)
+        f = options.loss_function::Function # zwy: here :: is an assertion of type
+        evaluator(f, tree, dataset, options, idx) # zwy: not modify this condition
     end
-
     return loss_val
 end
 
@@ -116,6 +120,20 @@ function eval_loss_batched(
 )::L where {T<:DATA_TYPE,L<:LOSS_TYPE}
     _idx = idx === nothing ? batch_sample(dataset, options) : idx
     return eval_loss(tree, dataset, options; regularization=regularization, idx=_idx)
+end
+
+#zwy: Evaluate the loss of a particular expression on the input dataset.
+function eval_loss_allocation(
+    tree::Node{T},
+    dataset::Dataset{T,L},
+    options::Options;
+    regularization::Bool=true,
+    idx=nothing,
+)::L where {T<:DATA_TYPE,L<:LOSS_TYPE}
+    @assert idx !== nothing
+    _idx = idx
+    return eval_loss(tree, dataset, options; regularization=regularization, idx=_idx)
+    
 end
 
 function batch_sample(dataset, options)
@@ -189,6 +207,46 @@ function score_func_batched(
     return score, result_loss
 end
 
+# Score an equation of allocation distribution type
+function score_func_allocation(
+    dataset::Dataset{T,L},
+    member,
+    options::Options;
+    complexity::Union{Int,Nothing}=nothing,
+)::Tuple{L,L} where {T<:DATA_TYPE,L<:LOSS_TYPE}
+    # Directly assign to id_origins based on the condition
+    id_origins = options.batching ? batch_sample(dataset, options) : collect(1:dataset.n)
+
+    # Initialize vectors for scores and result_losses
+    scores = Vector{L}()
+    result_losses = Vector{L}()
+
+    for id_origin in id_origins
+        # Get indices of non-zero elements
+        idx = findall(options.adjmatrix[id_origin, :] .== 1)
+        idx = idx+ sum(options.adjmatrix[:id_origin,:]) # zwy: this is because the original OD matrix are flattened.
+
+        # Evaluate loss and convert it to a score
+        result_loss = eval_loss_allocation(get_tree(member), dataset, options; idx=idx)
+        score = loss_to_score(
+            result_loss,
+            dataset.use_baseline,
+            dataset.baseline_loss,
+            member,
+            options,
+            complexity,
+        )
+
+        # Accumulate scores and losses
+        push!(scores, score)
+        push!(result_losses, result_loss)
+    end
+
+    # Return the mean of scores and result_losses
+    return mean(scores), mean(result_losses)
+end
+
+
 """
     update_baseline_loss!(dataset::Dataset{T,L}, options::Options) where {T<:DATA_TYPE,L<:LOSS_TYPE}
 
@@ -197,13 +255,13 @@ Update the baseline loss of the dataset using the loss function specified in `op
 function update_baseline_loss!(
     dataset::Dataset{T,L}, options::Options
 ) where {T<:DATA_TYPE,L<:LOSS_TYPE}
-    example_tree = Node(T; val=dataset.avg_y)
+    example_tree = Node(T; val=dataset.avg_y) # zwy: T is data type, avg_y is a attribute
     baseline_loss = eval_loss(example_tree, dataset, options)
     if isfinite(baseline_loss)
         dataset.baseline_loss = baseline_loss
         dataset.use_baseline = true
     else
-        dataset.baseline_loss = one(L)
+        dataset.baseline_loss = one(L) # zwy: one(L) 会返回L数据类型下的1，作为常数.
         dataset.use_baseline = false
     end
     return nothing
