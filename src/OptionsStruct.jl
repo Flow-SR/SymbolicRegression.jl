@@ -159,6 +159,9 @@ struct Options{CT,OP<:AbstractOperatorEnum,use_recorder,OPT<:Optim.Options,W}
     annealing::Bool
     batching::Bool
     batch_size::Int
+    allocation::Bool
+    eval_probability::Bool
+    adjmatrix::Array{Float64,2}
     mutation_weights::MutationWeights
     crossover_probability::Float32
     warmup_maxsize_by::Float32
@@ -195,6 +198,7 @@ struct Options{CT,OP<:AbstractOperatorEnum,use_recorder,OPT<:Optim.Options,W}
     nested_constraints::Union{Vector{Tuple{Int,Int,Vector{Tuple{Int,Int,Int}}}},Nothing}
     deterministic::Bool
     define_helper_functions::Bool
+    
 end
 
 function Base.print(io::IO, options::Options)
