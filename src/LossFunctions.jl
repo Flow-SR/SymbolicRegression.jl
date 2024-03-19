@@ -60,13 +60,18 @@ function _eval_loss(
 
     if options.allocation
         @assert partition !== nothing
-        for i in 1:length(partition)-1
-            partition_function = sum(prediction[partition[i]+1:partition[i+1]])
-            prediction[partition[i]:partition[i+1]] = prediction[partition[i]:partition[i+1]] / partition_function
+        if options.eval_probability
+            for i in 1:length(partition)-1
+                partition_function = sum(prediction[partition[i]+1:partition[i+1]])
+                prediction[partition[i]:partition[i+1]] = prediction[partition[i]:partition[i+1]] / partition_function
+            end
+        else
+            for i in 1:length(partition)-1
+                partition_function = sum(prediction[partition[i]+1:partition[i+1]])
+                total_out_flow = sum(y[idx[partition[i]+1:partition[i+1]]])
+                prediction[partition[i]:partition[i+1]] = prediction[partition[i]:partition[i+1]] / partition_function * total_out_flow
+            end
         end
-
-        partition_function = sum(prediction)
-        prediction = prediction / partition_function
     end
 
     loss_val = if dataset.weighted
@@ -112,10 +117,11 @@ function eval_loss(
     dataset::Dataset{T,L},
     options::Options;
     regularization::Bool=true,
+    partition = nothing,
     idx=nothing,
 )::L where {T<:DATA_TYPE,L<:LOSS_TYPE}
     loss_val = if options.loss_function === nothing
-        _eval_loss(tree, dataset, options, regularization, idx)
+        _eval_loss(tree, dataset, options, regularization, partition = partition, idx = idx)
     else
         f = options.loss_function::Function # zwy: here :: is an assertion of type
         evaluator(f, tree, dataset, options, idx) # zwy: not modify this condition
@@ -145,7 +151,7 @@ function eval_loss_allocation(
 )::L where {T<:DATA_TYPE,L<:LOSS_TYPE}
     @assert idx !== nothing
     _idx = idx
-    return eval_loss(tree, dataset, options; regularization=regularization, idx=_idx)
+    return eval_loss(tree, dataset, options; regularization=regularization, idx=_idx, partition=partition)
     
 end
 
@@ -188,7 +194,27 @@ end
 function score_func(
     dataset::Dataset{T,L}, member, options::Options; complexity::Union{Int,Nothing}=nothing
 )::Tuple{L,L} where {T<:DATA_TYPE,L<:LOSS_TYPE}
-    result_loss = eval_loss(get_tree(member), dataset, options)
+    # zwy: if options.allocation is true, then we will use score_func_allocation to calculate the score
+    if options.allocation
+        id_origins = collect(1:options.adjmatrix.nrows)
+    
+        destinations = Vector{Int}()  # zwy: this is to store the destinations of all origins
+        partition = Vector{Int}()
+        push!(partition, 0)  # zwy: this is to store the destinations of all origins
+        # idx as the destinations of all origins
+        for id_origin in id_origins 
+            # Get indices of non-zero elements
+            idx = findall(options.adjmatrix[id_origin, :] .== 1)
+            idx = idx+ sum(options.adjmatrix[:id_origin,:]) # zwy: this is because the original OD matrix are flattened.
+            append!(destinations, idx)
+            push!(partition, length(destinations))
+        end
+    
+        result_loss = eval_loss_allocation(get_tree(member), dataset, options; idx=destinations, partition = partition) 
+    else
+        result_loss = eval_loss(get_tree(member), dataset, options)
+    end
+
     score = loss_to_score(
         result_loss,
         dataset.use_baseline,
@@ -228,11 +254,7 @@ function score_func_allocation(
     complexity::Union{Int,Nothing}=nothing,
 )::Tuple{L,L} where {T<:DATA_TYPE,L<:LOSS_TYPE}
     # Directly assign to id_origins based on the condition
-    id_origins = options.batching ? batch_sample(dataset, options) : collect(1:dataset.n)
-
-    # Initialize vectors for scores and result_losses
-    scores = Vector{L}()
-    result_losses = Vector{L}()
+    id_origins = options.batching ? batch_sample(dataset, options) : collect(1:options.adjmatrix.nrows)
     
     destinations = Vector{Int}()  # zwy: this is to store the destinations of all origins
     partition = Vector{Int}()
@@ -246,7 +268,7 @@ function score_func_allocation(
         push!(partition, length(destinations))
     end
 
-    result_losses = eval_loss_allocation(get_tree(member), dataset, options; idx=destinations, partition = partition) 
+    result_loss = eval_loss_allocation(get_tree(member), dataset, options; idx=destinations, partition = partition) 
 
     # deprecated: loop for every origin
     #=for id_origin in id_origins 
@@ -272,7 +294,7 @@ function score_func_allocation(
     =#
 
     # Return the mean of scores and result_losses
-    return mean(scores), mean(result_losses)
+    return score, result_loss
 end
 
 
