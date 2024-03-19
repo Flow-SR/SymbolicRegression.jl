@@ -384,6 +384,8 @@ function Options end
     populations::Integer=15,
     perturbation_factor::Real=0.076,
     annealing::Bool=false,
+    eval_probability::Bool=false,
+    adjmatrix::Union{Nothing,Array{Float64,2}}=nothing,
     batching::Bool=false,
     allocation::Bool=false,
     batch_size::Integer=50,
@@ -801,5 +803,13 @@ function Options end
 
     return options
 end
+
+function set_adjmatrix!(options::Options, adjmatrix)
+    if options.adjmatrix === nothing
+        @warn("Warning: adjmatrix already exists")
+    else
+        options.adjmatrix = adjmatrix
+    end
+
 
 end
