@@ -307,7 +307,21 @@ function update_baseline_loss!(
     dataset::Dataset{T,L}, options::Options
 ) where {T<:DATA_TYPE,L<:LOSS_TYPE}
     example_tree = Node(T; val=dataset.avg_y) # zwy: T is data type, avg_y is a attribute
-    baseline_loss = eval_loss(example_tree, dataset, options)
+    if options.allocation
+        id_origins = collect(1:options.adjmatrix.nrows)
+        destinations = Vector{Int}()
+        partition = Vector{Int}()
+        push!(partition, 0)
+        for id_origin in id_origins
+            idx = findall(options.adjmatrix[id_origin, :] .== 1)
+            idx = idx + sum(options.adjmatrix[:id_origin, :])
+            append!(destinations, idx)
+            push!(partition, length(destinations))
+        end
+        baseline_loss = eval_loss_allocation(example_tree, dataset, options; idx=destinations, partition=partition)
+    else
+        baseline_loss = eval_loss(example_tree, dataset, options)
+    end
     if isfinite(baseline_loss)
         dataset.baseline_loss = baseline_loss
         dataset.use_baseline = true
