@@ -18,7 +18,7 @@
 
 ## Usage
 
-- Copy '/src/' directory into the project, then use the following to import:  
+- Copy '/src/' directory into the project, rename it as '/lib/', then use the following to import:  
 `push!(LOAD_PATH, "./lib")`  
 `using SymbolicRegression: SRRegressor`  
 (No need to install the "SymbolicRegression" library)
