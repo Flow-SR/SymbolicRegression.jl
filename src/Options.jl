@@ -384,11 +384,11 @@ function Options end
     populations::Integer=15,
     perturbation_factor::Real=0.076,
     annealing::Bool=false,
+    batching::Bool=false,
+    batch_size::Integer=50,
+    allocation::Bool=false,
     eval_probability::Bool=false,
     adjmatrix::Union{Nothing,Array{Float64,2}}=nothing,
-    batching::Bool=false,
-    allocation::Bool=false,
-    batch_size::Integer=50,
     mutation_weights::Union{MutationWeights,AbstractVector,NamedTuple}=MutationWeights(),
     crossover_probability::Real=0.066,
     warmup_maxsize_by::Real=0.0,
@@ -763,6 +763,9 @@ function Options end
         annealing,
         batching,
         batch_size,
+        allocation,
+        eval_probability,
+        adjmatrix,
         set_mutation_weights,
         crossover_probability,
         warmup_maxsize_by,
@@ -811,5 +814,6 @@ function set_adjmatrix!(options::Options, adjmatrix)
         options.adjmatrix = adjmatrix
     end
 
+end
 
 end
