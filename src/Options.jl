@@ -388,7 +388,7 @@ function Options end
     batch_size::Integer=50,
     allocation::Bool=false,
     eval_probability::Bool=false,
-    adjmatrix::Union{Nothing,Array{Float64,2}}=nothing,
+    adjmatrix::Union{Nothing, Array{Float64,2}}=nothing,
     mutation_weights::Union{MutationWeights,AbstractVector,NamedTuple}=MutationWeights(),
     crossover_probability::Real=0.066,
     warmup_maxsize_by::Real=0.0,
@@ -733,6 +733,24 @@ function Options end
 
     @assert print_precision > 0
 
+    # @assert allocation # for testing
+    # Allocation mode requires adjmatrix
+    if allocation  
+        @assert adjmatrix !== nothing
+        # Convert flow matrix to binary values
+        @assert size(adjmatrix, 1) == size(adjmatrix, 2)
+        num_places = size(adjmatrix, 1)
+        adj_matrix = Array{Int}(undef, num_places, num_places)
+        for i in 1:num_places
+            for j in 1:num_places
+                adj_matrix[i,j] = adjmatrix[i,j]>0 ? 1 : 0
+            end
+        end 
+    else
+        adj_matrix = nothing
+        num_places = -1
+    end
+
     options = Options{
         eltype(complexity_mapping),
         typeof(operators),
@@ -765,7 +783,8 @@ function Options end
         batch_size,
         allocation,
         eval_probability,
-        adjmatrix,
+        adj_matrix,
+        num_places,
         set_mutation_weights,
         crossover_probability,
         warmup_maxsize_by,
@@ -807,11 +826,12 @@ function Options end
     return options
 end
 
+
 function set_adjmatrix!(options::Options, adjmatrix)
-    if options.adjmatrix === nothing
-        @warn("Warning: adjmatrix already exists")
+    if options.adj_matrix === nothing
+        @warn("Warning: options.adj_matrix already exists")
     else
-        options.adjmatrix = adjmatrix
+        options.adj_matrix = adjmatrix
     end
 
 end

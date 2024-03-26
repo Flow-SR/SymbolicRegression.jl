@@ -8,7 +8,7 @@ using ..PopulationModule: Population, finalize_scores, best_sub_pop
 using ..HallOfFameModule: HallOfFame
 using ..AdaptiveParsimonyModule: RunningSearchStatistics
 using ..RegularizedEvolutionModule: reg_evol_cycle
-using ..LossFunctionsModule: score_func_batched, batch_sample, score_func_allocation
+using ..LossFunctionsModule: score_func_batched, batch_sample
 using ..ConstantOptimizationModule: optimize_constants
 using ..RecorderModule: @recorder
 
@@ -35,6 +35,7 @@ function s_r_cycle(
 
     # For evaluating on a fixed batch (for batching)
     idx = options.batching ? batch_sample(dataset, options) : Int[]
+
     loss_cache = [(oid=Node(T; val=zero(T)), score=zero(L)) for _ in pop.members]
     first_loop = true
 
@@ -58,17 +59,13 @@ function s_r_cycle(
                     # compare expressions with a batched loss (though the batch
                     # changes each iteration, and we evaluate on full-batch outside,
                     # so this is not biased).
-                    if options.allocation
-                        _score, _ = score_func_allocation(
+
+                    _score, _ = score_func_batched(
                             dataset, member, options; complexity=size, idx=idx
                         )
-                    else
-                        _score, _ = score_func_batched(
-                            dataset, member, options; complexity=size, idx=idx
-                        )
-                    end
                     loss_cache[i] = (oid=copy(oid), score=_score)
                     _score
+
                 else
                     # Already evaluated this particular expression, so just use
                     # the cached score
