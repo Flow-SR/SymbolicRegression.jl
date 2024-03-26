@@ -1,20 +1,16 @@
 # Change list of implementation of the allocation function
 
-## Functions added
+## Modification
 
-- **eval_loss_allocation**: aims to pass the partition parameter to eval_loss.
-- **score_func_allocation**: generates partition and passes to eval_loss_allocation.
+- OptionsModule
 
-## Functions modified
+-- **Options** : The construction function is in Options.jl and the definition is in Optionstruct.jl. Attributes `allocation`, `eval_probability`, `adjmatrix`, `num_places` are added. To upload `adjmatrix`, I implement a function in Options.jl, `set_adjmatrix` (Remember to import when using!).
 
-- **score_func**: adds allocation judgement.
-- **update_baseline_loss** : adds allocation judgement.
-- **s_r_cycle**: in SingleIteration.jl, the main loop of the program. In it, I adds an allocation conditional statement. If yes, call eval_loss_allocation function.  
-- **_eval_loss**: add allocation judgement and eval_probability judgement. if eval_probability, do not multiply total outflow.  
+- LossFunctionsModule
 
-## Struct modified
-
-- **Options** : The construction function is in Options.jl and the definition is in Optionstruct.jl. Atrributes allocation, eval_probability and adjmatrix are added. To upload adjmatrix, I implement a function in Options.jl, set_adjmatrix (Remember to import when using!).
+-- **eval_loss**: Generate partition if `allocation`.
+-- **_eval_loss**: Perform probability normalization if `allocation`. If `eval_probability`, do not multiply total outflow.  
+-- **batch_sample**: Sample from `1:num_places` instead of `1:dataset.n` if allocation.
 
 ## Usage
 
