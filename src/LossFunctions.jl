@@ -63,13 +63,13 @@ function _eval_loss(
         if options.eval_probability
             for i in 1:length(partition)-1
                 partition_function = sum(prediction[partition[i]+1:partition[i+1]])
-                prediction[partition[i]:partition[i+1]] = prediction[partition[i]:partition[i+1]] / partition_function
+                prediction[partition[i]+1:partition[i+1]] = prediction[partition[i]+1:partition[i+1]] / partition_function
             end
         else
             for i in 1:length(partition)-1
                 partition_function = sum(prediction[partition[i]+1:partition[i+1]])
-                total_out_flow = sum(dataset.y[idx[partition[i]+1:partition[i+1]]]) # 
-                prediction[partition[i]:partition[i+1]] = prediction[partition[i]:partition[i+1]] / partition_function * total_out_flow
+                total_out_flow = sum(dataset.y[idx[partition[i]+1:partition[i+1]]]) 
+                prediction[partition[i]+1:partition[i+1]] = prediction[partition[i]+1:partition[i+1]] / partition_function * total_out_flow
             end
         end
     end
@@ -123,7 +123,7 @@ function eval_loss(
         id_origins = idx === nothing ? collect(1:options.num_places) : idx
         id_data = Vector{Int}()
         partition = Vector{Int}()
-        push!(partition, 1)
+        push!(partition, 0)
         for id_origin in id_origins
             id_dest = findall(options.adj_matrix[id_origin, :] .== 1)
             id_data_ori = range(1, length(id_dest)) .+ sum(options.adj_matrix[1:(id_origin-1),:]) 
