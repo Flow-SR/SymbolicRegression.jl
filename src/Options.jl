@@ -388,6 +388,7 @@ function Options end
     batch_size::Integer=50,
     allocation::Bool=false,
     eval_probability::Bool=false,
+    adjmatrix::Union{Nothing, Array{Float64,2}}=nothing,
     ori_sep::Union{Nothing, Array{Int}}=nothing,
     mutation_weights::Union{MutationWeights,AbstractVector,NamedTuple}=MutationWeights(),
     crossover_probability::Real=0.066,
