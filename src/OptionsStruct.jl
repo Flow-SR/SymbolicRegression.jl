@@ -161,7 +161,7 @@ struct Options{CT,OP<:AbstractOperatorEnum,use_recorder,OPT<:Optim.Options,W}
     batch_size::Int
     allocation::Bool
     eval_probability::Bool
-    adj_matrix::Union{Array{Int,2},Nothing}
+    ori_sep::Union{Array{Int},Nothing}
     num_places::Union{Int,Nothing}
     mutation_weights::MutationWeights
     crossover_probability::Float32

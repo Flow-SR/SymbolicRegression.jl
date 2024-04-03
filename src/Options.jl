@@ -388,7 +388,7 @@ function Options end
     batch_size::Integer=50,
     allocation::Bool=false,
     eval_probability::Bool=false,
-    adjmatrix::Union{Nothing, Array{Float64,2}}=nothing,
+    ori_sep::Union{Nothing, Array{Int}}=nothing,
     mutation_weights::Union{MutationWeights,AbstractVector,NamedTuple}=MutationWeights(),
     crossover_probability::Real=0.066,
     warmup_maxsize_by::Real=0.0,
@@ -733,21 +733,25 @@ function Options end
 
     @assert print_precision > 0
 
-    # @assert allocation # for testing
-    # Allocation mode requires adjmatrix
+    # Allocation mode requires ori_sep
     if allocation  
-        @assert adjmatrix !== nothing
-        # Convert flow matrix to binary values
-        @assert size(adjmatrix, 1) == size(adjmatrix, 2)
-        num_places = size(adjmatrix, 1)
-        adj_matrix = Array{Int}(undef, num_places, num_places)
-        for i in 1:num_places
-            for j in 1:num_places
-                adj_matrix[i,j] = adjmatrix[i,j]>0 ? 1 : 0
+        if ori_sep !== nothing
+            num_places = size(ori_sep, 1) 
+            pushfirst!(ori_sep, 0)
+        else
+            @assert adjmat !== nothing
+            @assert size(adjmatrix, 1) == size(adjmatrix, 2)
+            num_places = size(adjmatrix, 1)
+            ori_sep = Vector{Int}()
+            push!(ori_sep, 0)
+            flow_count = 0
+            for id_origin in 1:n_places
+                id_dest = findall(adjmatrix[id_origin, :] .> 0)
+                flow_count += length(id_dest)
+                push!(partition, flow_count)
             end
-        end 
+        end
     else
-        adj_matrix = nothing
         num_places = -1
     end
 
@@ -783,7 +787,7 @@ function Options end
         batch_size,
         allocation,
         eval_probability,
-        adj_matrix,
+        ori_sep,
         num_places,
         set_mutation_weights,
         crossover_probability,
@@ -824,16 +828,6 @@ function Options end
     )
 
     return options
-end
-
-
-function set_adjmatrix!(options::Options, adjmatrix)
-    if options.adj_matrix === nothing
-        @warn("Warning: options.adj_matrix already exists")
-    else
-        options.adj_matrix = adjmatrix
-    end
-
 end
 
 end

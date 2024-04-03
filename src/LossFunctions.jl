@@ -125,8 +125,7 @@ function eval_loss(
         partition = Vector{Int}()
         push!(partition, 0)
         for id_origin in id_origins
-            id_dest = findall(options.adj_matrix[id_origin, :] .== 1)
-            id_data_ori = range(1, length(id_dest)) .+ sum(options.adj_matrix[1:(id_origin-1),:]) 
+            id_data_ori = (options.ori_sep[id_origin]+1) : options.ori_sep[id_origin+1]
             append!(id_data, id_data_ori)
             push!(partition, length(id_data))
         end
