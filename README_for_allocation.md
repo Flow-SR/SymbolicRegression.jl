@@ -4,11 +4,13 @@
 
 - OptionsModule
 
--- **Options** : The construction function is in Options.jl and the definition is in Optionstruct.jl. Attributes `allocation`, `eval_probability`, `adjmatrix`, `num_places` are added. To upload `adjmatrix`, I implement a function in Options.jl, `set_adjmatrix` (Remember to import when using!).
+--  **Options** : The construction function is in Options.jl and the definition is in Optionstruct.jl. Attributes `allocation`, `eval_probability`, `ori_sep`, `num_places` are added.  
+
+-- In allocation mode, `ori_sep` is required as n-dim vector, where n is the number of places; dataset entry `ori_sep[i-1]+1:ori_sep[i]` corresponds to flows with origin `i`. Alternatively, you may input n*n `adjmatrix`, which is transformed into `ori_sep`. `num_places` will be calculated automatically.  
 
 - LossFunctionsModule
 
--- **eval_loss**: Generate partition if `allocation`.
+-- **eval_loss**: Generate partition if `allocation`.  
 -- **_eval_loss**: Perform probability normalization if `allocation`. If `eval_probability`, do not multiply total outflow.  
 -- **batch_sample**: Sample from `1:num_places` instead of `1:dataset.n` if allocation.
 
