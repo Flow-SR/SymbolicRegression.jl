@@ -210,6 +210,7 @@ using .PopulationModule: Population, best_sub_pop, record_population, best_of_sa
 using .HallOfFameModule:
     HallOfFame, calculate_pareto_frontier, string_dominating_pareto_curve
 using .SingleIterationModule: s_r_cycle, optimize_and_simplify_population
+using .ConstantOptimizationModule: dispatch_optimize_constants
 using .ProgressBarsModule: WrappedProgressBar
 using .RecorderModule: @recorder, is_recording, find_iteration_from_record
 using .MigrationModule: migrate!
@@ -583,7 +584,7 @@ function _equation_search(
     end
 
     example_dataset = datasets[1]
-    nout = size(datasets, 1) # zwy: In Julia, the first fimension is 1 but not 0.
+    nout = size(datasets, 1) # zwy: In Julia, the first dimension is 1 but not 0.
     @assert (nout == 1 || DIM_OUT == 2)
 
     if runtests
@@ -860,6 +861,19 @@ function _equation_search(
             update_hall_of_fame!(hallOfFame[j], cur_pop.members, options)
             update_hall_of_fame!(hallOfFame[j], best_seen.members[best_seen.exists], options)
             #! format: on
+            
+            if options.optimize_hof && cycles_remaining[j]==1
+                for size in 1:(options.maxsize + MAX_DEGREE)
+                    if hallOfFame[j].exists[size]
+                        println("$size before opt: $(hallOfFame[j].members[size].loss) $(string_tree(hallOfFame[j].members[size].tree, options, variable_names=dataset.variable_names))")
+
+                        hallOfFame[j].members[size], evals_opt_hof = dispatch_optimize_constants(dataset, hallOfFame[j].members[size], options, nothing)
+                        num_evals[j][i] += evals_opt_hof
+
+                        println("$size after opt: $(hallOfFame[j].members[size].loss) $(string_tree(hallOfFame[j].members[size].tree, options, variable_names=dataset.variable_names))")
+                    end
+                end
+            end
 
             # Dominating pareto curve - must be better than all simpler equations
             dominating = calculate_pareto_frontier(hallOfFame[j])
@@ -1066,7 +1080,8 @@ function _dispatch_s_r_cycle(;
         dataset, out_pop, options, curmaxsize, record
     )
     num_evals += evals_from_optimize
-    if options.batching # zwy: why batching but not use idx
+
+    if options.batching
         for i_member in 1:(options.maxsize + MAX_DEGREE)
             score, result_loss = score_func(dataset, best_seen.members[i_member], options)
             best_seen.members[i_member].score = score
