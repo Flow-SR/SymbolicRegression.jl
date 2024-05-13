@@ -112,7 +112,7 @@ ori_sep = load("eng_"*level*"_supp3_sep.jld2", "sep")
 
 timestamp = Dates.format(Dates.now(),"yyyymmddHHMM")[3:end]
 model = SRRegressor(
-    niterations=5,
+    niterations=100,
     binary_operators=[+, -, *, /, ^],
     unary_operators=[exp, log],
     complexity_of_operators=[exp => 2, log => 2],
