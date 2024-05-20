@@ -163,6 +163,7 @@ struct Options{CT,OP<:AbstractOperatorEnum,use_recorder,OPT<:Optim.Options,W}
     eval_probability::Bool
     ori_sep::Union{Array{Int},Nothing}
     num_places::Union{Int,Nothing}
+    optimize_hof::Bool
     mutation_weights::MutationWeights
     crossover_probability::Float32
     warmup_maxsize_by::Float32
