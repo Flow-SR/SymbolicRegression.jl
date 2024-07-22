@@ -6,11 +6,11 @@ using Dates
 using FileIO
 
 level= "msoa" # "msoa" or "mlad"
-model = "GMPow"
+model = "RM"
 noisetype = "logadd"
 stder = "0.5"
 supp = "3"
-seed = "20240603"
+seed = "20240528"
 
 # First make data
 using Pickle
@@ -23,8 +23,9 @@ end
 select_feat_ori = ["workpop"]
 select_feat_dest = ["workpop"]
 use_dist = true
-use_iowork = false  # intervening opportunity, calculated with workpop
+use_iowork = true  # intervening opportunity, calculated with workpop
 use_iores = false  # intervening opportunity, calculated with respop
+modified_io = false
 
 flow_dict = Pickle.load("../data/quasisynth/eng"* level *"_"* model *"_"* noisetype * stder * "_supp"*supp*"_"*seed*".pkl")
 dist_arr = Float64[]
@@ -80,14 +81,14 @@ for o in units
         end
         if use_iores
             iores = iores_dict[o][d]
-            if level=="msoa"
+            if modified_io && level=="msoa"
                 iores += attrtab[geoid2row[o], feat["respop"]] 
             end
             push!(iores_arr, iores)
         end
         if use_iowork
             iowork = iowork_dict[o][d] 
-            if level=="msoa"
+            if modified_io && level=="msoa"
                 iowork += attrtab[geoid2row[o], feat["workpop"]] 
             end
             push!(iowork_arr, iowork)
@@ -98,22 +99,21 @@ for o in units
     end
 end
 y = flow
-X = (D=dist_arr,  Wo=ofeatarr[1], Wd=dfeatarr[1])
-# X = (Sw=iowork_arr,  Wo=ofeatarr[1], Wd=dfeatarr[1])
-#X = (D=dist_arr, Sr=iores_arr, Sw=iowork_arr, Ro=ofeatarr[1], Wo=ofeatarr[2], Rd=dfeatarr[1], Wd=dfeatarr[2]) # Need to change everytime making new data 
+X = (D=dist_arr,  Sw=iowork_arr, Wo=ofeatarr[1], Wd=dfeatarr[1])
+# X = (D=dist_arr, Sr=iores_arr, Sw=iowork_arr, Ro=ofeatarr[1], Wo=ofeatarr[2], Rd=dfeatarr[1], Wd=dfeatarr[2]) # Need to change everytime making new data 
 
 ori_sep = [sum(ori_count[1:i]) for i in 1:nplaces]
 println(ori_count[1:5])
 println(ori_sep[1:5])
 
 #=
-save("./data/eng_"*level*"_supp3_X_dist_miorw_odrw.jld2", "X", X)
+save("./data/eng_"*level*"_supp3_X_dist_iorw_odrw.jld2", "X", X)
 save("./data/eng_"*level*"_supp3_Y.jld2", "y", y)
 save("./data/eng_"*level*"_supp3_sep.jld2", "sep", ori_sep)
 
 
 # Load Existing Data
-X = load("./data/eng_"*level*"_supp3_X_dist_odw.jld2", "X")
+X = load("./data/eng_"*level*"_supp3_X_dist_iorw_odrw.jld2", "X")
 y = load("./data/eng_"*level*"_supp3_Y.jld2", "y")
 ori_sep = load("./data/eng_"*level*"_supp3_sep.jld2", "sep")
 =#
@@ -128,7 +128,7 @@ model = SRRegressor(
     allocation=true,
     optimize_hof=true, 
     ori_sep=ori_sep,
-    output_file="hof_uksynth_" *level *"_"* model *"_"* noisetype * stder * "_supp"*supp*"_"* seed * ".csv",
+    output_file="hof_uksynth_" *level *"_"* model *"_"* noisetype * stder * "_supp"*supp*"_"* seed *"_"*timestamp*".csv",
 )
 
 
