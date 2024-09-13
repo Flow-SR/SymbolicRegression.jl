@@ -7,16 +7,17 @@ using FileIO
 
 level= "county" # ["county", "state", "csa"]
 
-select_feat_ori = ["respop", "workpop"] # ["respop", "workpop"]
-select_feat_dest = ["respop", "workpop"]
-use_dist = true
-use_iowork = true  # intervening opportunity, calculated with workpop
-use_iores = true  # intervening opportunity, calculated with respop
-modified_io = false
 repeat = 5
 
 #= First make data
 using Pickle
+select_feat_ori = ["workpop"] # ["respop", "workpop"]
+select_feat_dest = ["workpop"]
+use_dist = true
+use_iowork = false  # intervening opportunity, calculated with workpop
+use_iores = false  # intervening opportunity, calculated with respop
+modified_io = false
+
 if level == "county"
     feat = Dict("respop"=>4, "employedpop"=>5, "workpop"=>6)
     iotype = "io"
@@ -122,7 +123,7 @@ save("./data/us_"*level*"_sep.jld2", "sep", ori_sep)
 
 # Load Existing Data
 for rep in 1:repeat
-    X = load("./data/us_"*level*"_X_dist_iorw_odrw.jld2", "X")
+    X = load("./data/us_"*level*"_X_dist_odw.jld2", "X")
     y = load("./data/us_"*level*"_Y.jld2", "y")
     ori_sep = load("./data/us_"*level*"_sep.jld2", "sep")
 
