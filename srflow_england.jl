@@ -124,8 +124,8 @@ for rep in 1:repeat
 
     timestamp = Dates.format(Dates.now(),"yyyymmddHHMM")[3:end]
     model = SRRegressor(
-        niterations=200, # default: 100
-        populations=60, # default: 15
+        niterations=100, 
+        populations=15, 
         binary_operators=[+, -, *, /, ^],
         unary_operators=[exp, log],
         complexity_of_operators=[exp => 2, log => 2],
@@ -138,7 +138,7 @@ for rep in 1:repeat
 
     if level=="msoa"
         model.batching=true
-        model.batch_size=100  # default: 40
+        model.batch_size=40
     end
 
     mach = machine(model, X, y)
