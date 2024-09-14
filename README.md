@@ -1,6 +1,32 @@
 <!-- prettier-ignore-start -->
-<div align="center">
 
+
+## Modification version of SymbolicRegression.jl for allocation mobility model
+
+This repository is a modification version of [SymbolicRegression.jl](https://github.com/MilesCranmer/SymbolicRegression.jl), aiming to apply SymbolicRegression.jl to the mobility flow allocation model in the study [Distilling symbolic models from mobility data](https://github.com/urbansci/FlowSR).
+
+Please refer to our [paper](https://github.com/urbansci/FlowSR) for more details.
+### Modification Records of SymbolicRegression.jl 
+
+#### OptionsModule
+
+--  **Options** : The construction functions are in Options.jl and the definition is in Optionstruct.jl. Attributes `allocation`, `eval_probability`, `ori_sep`, `num_places`,  `optimize_hof` are added.  
+
+-- In allocation mode, `ori_sep` is required as n-dim vector, where n is the number of places; dataset entry `ori_sep[i-1]+1:ori_sep[i]` corresponds to flows with origin `i`. Alternatively, you may input n*n `adjmatrix`, which is transformed into `ori_sep`. `num_places` will be calculated automatically.  
+
+#### LossFunctionsModule
+
+-- **eval_loss**: Generate partition if `allocation`==true.  
+-- **_eval_loss**: Perform probability normalization if `allocation`==true. If `eval_probability`==true, do not multiply total outflow.  
+-- **batch_sample**: Sample from `1:num_places` instead of `1:dataset.n` if allocation.
+
+#### SymbolicRegressionModule
+-- **_equation_search**: The parameter `optimize_hof` is added. If `optimize_hof`==true, Hall-of-Fame equations will be optimized with entire dataset (even if `batching=true`) after the last `s_r_cycle`.
+
+---
+**Following parts are README.md from the original repository.**
+
+<div align="center">
 SymbolicRegression.jl searches for symbolic expressions which optimize a particular objective.
 
 https://github.com/MilesCranmer/SymbolicRegression.jl/assets/7593028/f5b68f1f-9830-497f-a197-6ae332c94ee0
@@ -22,11 +48,18 @@ a Python frontend.
 
 **Contents**:
 
-- [Contributors](#contributors-)
+- [Modification version of SymbolicRegression.jl for allocation mobility model](#modification-version-of-symbolicregressionjl-for-allocation-mobility-model)
+  - [Modification Records of SymbolicRegression.jl](#modification-records-of-symbolicregressionjl)
+    - [OptionsModule](#optionsmodule)
+    - [LossFunctionsModule](#lossfunctionsmodule)
+    - [SymbolicRegressionModule](#symbolicregressionmodule)
 - [Quickstart](#quickstart)
-    - [MLJ Interface](#mlj-interface)
-    - [Low-Level Interface](#low-level-interface)
-- [→ Documentation](https://astroautomata.com/SymbolicRegression.jl)
+  - [MLJ Interface](#mlj-interface)
+  - [Low-Level Interface](#low-level-interface)
+- [Constructing expressions](#constructing-expressions)
+- [Exporting to SymbolicUtils.jl](#exporting-to-symbolicutilsjl)
+- [Code structure](#code-structure)
+- [Search options](#search-options)
 
 <div align="center">
 
