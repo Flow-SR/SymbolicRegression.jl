@@ -10,18 +10,19 @@ Please refer to our [paper](https://github.com/urbansci/FlowSR) for more details
 
 #### OptionsModule
 
---  **Options** : The construction functions are in Options.jl and the definition is in Optionstruct.jl. Attributes `allocation`, `eval_probability`, `ori_sep`, `num_places`,  `optimize_hof` are added.  
+-  **Options** : Various attributes are added to this class, including `allocation`, `eval_probability`, `ori_sep`, `num_places`,  `optimize_hof`. 
 
--- In allocation mode, `ori_sep` is required as n-dim vector, where n is the number of places; dataset entry `ori_sep[i-1]+1:ori_sep[i]` corresponds to flows with origin `i`. Alternatively, you may input n*n `adjmatrix`, which is transformed into `ori_sep`. `num_places` will be calculated automatically.  
+- If `allocation`==true, `ori_sep` is required as n-dim vector, where n is the number of places; dataset entry `ori_sep[i-1]+1:ori_sep[i]` corresponds to flows with origin `i`. Alternatively, you may input n*n `adjmatrix`, which is transformed into `ori_sep`. `num_places` will be calculated automatically.  
 
 #### LossFunctionsModule
 
--- **eval_loss**: Generate partition if `allocation`==true.  
--- **_eval_loss**: Perform probability normalization if `allocation`==true. If `eval_probability`==true, do not multiply total outflow.  
--- **batch_sample**: Sample from `1:num_places` instead of `1:dataset.n` if allocation.
+- **eval_loss**: Generate partition if `allocation`==true.  
+- **_eval_loss**: Perform probability normalization if `allocation`==true. If `eval_probability`, do not multiply total outflow.  
+-- **function batch_sample**: Sample from `1:num_places` instead of `1:dataset.n` if allocation.
 
 #### SymbolicRegressionModule
--- **_equation_search**: The parameter `optimize_hof` is added. If `optimize_hof`==true, Hall-of-Fame equations will be optimized with entire dataset (even if `batching=true`) after the last `s_r_cycle`.
+- **_equation_search**: if `optimize_hof`==true, Hall-of-Fame equations will be optimized with entire dataset (even if `batching=true`) after the last `s_r_cycle`.
+
 
 ---
 **Following parts are README.md from the original repository.**
